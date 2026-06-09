@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TruthLens · AI Fact-Checking for Your Notes</title>
+<meta name="description" content="TruthLens turns messy study notes into a verified knowledge base — sentence-level AI fact-checking with corrections, reasoning, and sources. A BCSAI hackathon project, rebuilt as an interactive showcase." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#141618;
+    --paper:#f5f6f4;
+    --paper-2:#eceee9;
+    --line:#d6dad2;
+    --accent:#2f5fd0;     /* verify blue */
+    --good:#2f8f63;       /* verified green */
+    --bad:#c0492f;        /* flagged red */
+    --muted:#666c66;
+    --shadow:0 1px 0 rgba(0,0,0,.04), 0 18px 40px -28px rgba(20,22,24,.5);
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:500;line-height:1.08;letter-spacing:-.01em}
+  a{color:var(--accent);text-decoration:none}
+  code,.mono{font-family:"JetBrains Mono",monospace}
+
+  header.bar{position:sticky;top:0;z-index:30;background:rgba(245,246,244,.82);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .bar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{font-family:"Fraunces",serif;font-size:1.05rem;display:flex;align-items:center;gap:9px}
+  .lens{width:14px;height:14px;border-radius:50%;border:3px solid var(--accent);position:relative}
+  .lens::after{content:"";position:absolute;width:4px;height:7px;background:var(--accent);
+    right:-4px;bottom:-4px;transform:rotate(45deg);border-radius:2px}
+  nav.links a{color:var(--muted);font-size:.86rem;margin-left:22px;font-weight:500}
+  nav.links a:hover{color:var(--ink)}
+  @media(max-width:720px){nav.links{display:none}}
+
+  .hero{padding:84px 0 60px;border-bottom:1px solid var(--line)}
+  .kicker{font-family:"JetBrains Mono",monospace;font-size:.74rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 18px}
+  .hero h1{font-size:clamp(2.5rem,5.6vw,4.4rem);margin:0 0 20px;max-width:15ch}
+  .hero p.lede{font-size:1.18rem;max-width:60ch;color:#2a2e30;margin:0 0 30px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:999px;
+    font-weight:600;font-size:.9rem;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+    transition:transform .15s ease}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.ghost{background:transparent;color:var(--ink)}
+
+  /* ---- interactive notebook demo ---- */
+  .demo{margin-top:52px;background:#fff;border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);overflow:hidden;max-width:680px}
+  .demo .top{display:flex;align-items:center;gap:8px;padding:13px 18px;border-bottom:1px solid var(--line);
+    background:var(--paper-2)}
+  .demo .top .d{width:11px;height:11px;border-radius:50%;background:#d6dad2}
+  .demo .top .title{font-size:.82rem;color:var(--muted);margin-left:8px;font-weight:500}
+  .demo .body{padding:22px}
+  .demo .body p.note{font-size:1.04rem;line-height:1.85;margin:0}
+  .sent{padding:1px 2px;border-radius:4px;transition:background .3s,box-shadow .3s;cursor:default}
+  .sent.flagged{background:rgba(192,73,47,.12);box-shadow:inset 0 -2px 0 var(--bad)}
+  .sent.ok{background:rgba(47,143,99,.12);box-shadow:inset 0 -2px 0 var(--good)}
+  .fixwrap{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+  .fix{border:1px solid var(--line);border-left:3px solid var(--bad);border-radius:10px;padding:12px 14px;
+    background:var(--paper);font-size:.88rem;opacity:0;transform:translateY(6px);
+    transition:opacity .4s,transform .4s}
+  .fix.show{opacity:1;transform:none}
+  .fix .lab{font-family:"JetBrains Mono",monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--bad);font-weight:600}
+  .fix .corr{margin:5px 0 4px}
+  .fix .corr b{color:var(--good)}
+  .fix .src{color:var(--muted);font-size:.8rem}
+  .demo .act{display:flex;align-items:center;gap:14px;padding:0 22px 22px}
+  .runbtn{font-size:.86rem;padding:9px 18px;border-radius:999px;border:none;background:var(--accent);
+    color:#fff;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+  .runbtn:disabled{opacity:.55;cursor:default}
+  .scan{font-size:.8rem;color:var(--muted)}
+
+  section{padding:74px 0;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:"JetBrains Mono",monospace;font-size:.72rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+  h2{font-size:clamp(1.8rem,3.6vw,2.6rem);margin:0 0 14px}
+  .section-lede{max-width:62ch;color:#33372f;font-size:1.05rem}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px}
+  @media(max-width:760px){.grid3{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)}
+  .card .ic{font-size:1.5rem}
+  .card h3{font-size:1.16rem;margin:10px 0 6px}
+  .card p{margin:0;font-size:.92rem;color:#43483f}
+
+  .steps{counter-reset:s;margin-top:34px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:760px){.steps{grid-template-columns:1fr}}
+  .step{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:22px;position:relative}
+  .step::before{counter-increment:s;content:counter(s,decimal-leading-zero);
+    font-family:"JetBrains Mono",monospace;font-size:.74rem;color:var(--accent);font-weight:600}
+  .step h4{margin:6px 0 4px;font-family:"Fraunces",serif;font-weight:500;font-size:1.08rem}
+  .step p{margin:0;font-size:.88rem;color:var(--muted)}
+
+  .archi{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-top:32px}
+  .box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;text-align:center;
+    min-width:140px;box-shadow:var(--shadow)}
+  .box .t{font-family:"Fraunces",serif;font-size:1rem}
+  .box .s{font-size:.74rem;color:var(--muted);font-family:"JetBrains Mono",monospace}
+  .arrow{color:var(--muted);padding:0 14px;font-size:1.2rem}
+  .box.ai{border-color:var(--accent);border-style:dashed}
+  @media(max-width:760px){.archi{flex-direction:column;align-items:stretch}.arrow{transform:rotate(90deg);padding:6px 0;text-align:center}}
+
+  .stackgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:34px}
+  @media(max-width:760px){.stackgrid{grid-template-columns:repeat(2,1fr)}}
+  .stackcol h4{font-family:"JetBrains Mono",monospace;font-size:.72rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  .stackcol ul{list-style:none;margin:0;padding:0}
+  .stackcol li{font-size:.88rem;padding:5px 0;border-bottom:1px solid var(--line);color:#3a3f37}
+
+  .tracks{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+  .track{padding:12px 18px;border-radius:12px;background:var(--paper-2);border:1px solid var(--line);
+    font-size:.9rem;font-weight:500;display:flex;align-items:center;gap:10px}
+  .track .primary{font-family:"JetBrains Mono",monospace;font-size:.66rem;background:var(--accent);color:#fff;
+    padding:2px 7px;border-radius:5px}
+
+  .quote{margin-top:34px;font-family:"Fraunces",serif;font-size:1.5rem;line-height:1.4;max-width:30ch;color:var(--ink)}
+  .quote span{color:var(--muted);font-family:"Inter",sans-serif;font-size:.9rem;display:block;margin-top:14px}
+
+  footer{padding:48px 0 70px}
+  footer .wrap{color:var(--muted);font-size:.85rem}
+
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="brand"><span class="lens"></span> TruthLens</div>
+    <nav class="links">
+      <a href="#what">What it is</a>
+      <a href="#how">How it works</a>
+      <a href="#arch">Architecture</a>
+      <a href="#stack">Stack</a>
+      <a href="#story">Story</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="kicker">BCSAI · Hackathon Project · Automate Learning</p>
+    <h1>Turn messy notes into verified knowledge.</h1>
+    <p class="lede">TruthLens is a note-taking workspace that fact-checks your study notes with AI — inspecting every sentence, flagging weak or incorrect claims, and handing back corrections with reasoning and sources. All without breaking your flow.</p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/sofiagzzloz/TruthLens" target="_blank" rel="noopener">View original source →</a>
+      <a class="btn ghost" href="#how">How it works</a>
+    </div>
+
+    <div class="demo" id="demo">
+      <div class="top">
+        <span class="d"></span><span class="d"></span><span class="d"></span>
+        <span class="title">my-study-notes.md</span>
+      </div>
+      <div class="body">
+        <p class="note" id="note">
+          <span class="sent" data-v="ok">The mitochondria is the powerhouse of the cell.</span>
+          <span class="sent" data-v="bad" data-corr="Water boils at <b>100&nbsp;°C</b> at sea level (1&nbsp;atm), not 90&nbsp;°C." data-src="NIST · standard boiling point of water">Water boils at 90&nbsp;°C at sea level.</span>
+          <span class="sent" data-v="bad" data-corr="The Great Wall is <b>not</b> generally visible to the naked eye from low Earth orbit — this is a common myth." data-src="NASA · astronaut observations">The Great Wall of China is visible from space with the naked eye.</span>
+          <span class="sent" data-v="ok">Python is a dynamically typed language.</span>
+        </p>
+        <div class="fixwrap" id="fixwrap"></div>
+      </div>
+      <div class="act">
+        <button class="runbtn" id="run">🔍 Run TruthLens</button>
+        <span class="scan" id="scan">4 sentences · not yet analysed</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="what">
+  <div class="wrap reveal">
+    <p class="eyebrow">01 — What it is</p>
+    <h2>A personal fact-checker, built into your notebook.</h2>
+    <p class="section-lede">Most learners take notes quickly without verifying them, miss subtle factual errors, and spend hours double-checking. TruthLens automates that feedback loop so notes become reliable knowledge.</p>
+    <div class="grid3">
+      <div class="card"><div class="ic">🔬</div><h3>Sentence-level intelligence</h3><p>Inspects every sentence you write and flags weak or incorrect knowledge.</p></div>
+      <div class="card"><div class="ic">🤖</div><h3>AI-powered fact checking</h3><p>Uses local LLMs via Ollama to verify claims and ground corrections.</p></div>
+      <div class="card"><div class="ic">🔗</div><h3>Source citations</h3><p>Each correction comes with references to trustworthy sources.</p></div>
+      <div class="card"><div class="ic">📝</div><h3>Effortless corrections</h3><p>Get refined notes with confidence that every claim is verified.</p></div>
+      <div class="card"><div class="ic">📊</div><h3>Learning workspace</h3><p>A dashboard to manage documents, view analysis, and track corrections.</p></div>
+      <div class="card"><div class="ic">🔒</div><h3>Secure &amp; private</h3><p>User authentication with secure, per-user workspace management.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap reveal">
+    <p class="eyebrow">02 — How it works</p>
+    <h2>Six steps from raw notes to reliable knowledge.</h2>
+    <div class="steps">
+      <div class="step"><h4>Create an account</h4><p>Sign up and get your personal workspace.</p></div>
+      <div class="step"><h4>Write your notes</h4><p>Create documents and start writing study notes.</p></div>
+      <div class="step"><h4>AI analysis</h4><p>Run TruthLens to analyse each sentence for factual accuracy.</p></div>
+      <div class="step"><h4>View results</h4><p>See flagged sentences with corrections, reasoning, and sources.</p></div>
+      <div class="step"><h4>Apply corrections</h4><p>Review and apply suggested fixes to improve your notes.</p></div>
+      <div class="step"><h4>Build knowledge</h4><p>Maintain a reliable, fact-checked knowledge base over time.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="arch">
+  <div class="wrap reveal">
+    <p class="eyebrow">03 — Architecture</p>
+    <h2>How the pieces fit.</h2>
+    <p class="section-lede">A Next.js front end talks to a Django REST backend, which persists to PostgreSQL and calls a local Ollama LLM engine for the actual fact-checking.</p>
+    <div class="archi">
+      <div class="box"><div class="t">Next.js</div><div class="s">frontend</div></div>
+      <span class="arrow">→</span>
+      <div class="box"><div class="t">Django</div><div class="s">REST backend</div></div>
+      <span class="arrow">→</span>
+      <div class="box"><div class="t">PostgreSQL</div><div class="s">database</div></div>
+      <span class="arrow">↘</span>
+      <div class="box ai"><div class="t">Ollama</div><div class="s">LLM engine</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="stack">
+  <div class="wrap reveal">
+    <p class="eyebrow">04 — Stack</p>
+    <h2>Built with.</h2>
+    <div class="stackgrid">
+      <div class="stackcol"><h4>Frontend</h4><ul>
+        <li>Next.js 16</li><li>React 19.2</li><li>TypeScript</li><li>Tailwind CSS</li><li>Framer Motion</li><li>shadcn/ui · Radix</li></ul></div>
+      <div class="stackcol"><h4>Backend</h4><ul>
+        <li>Django 5.0</li><li>Django REST</li><li>PostgreSQL 15</li><li>Django Unfold</li><li>CORS Headers</li></ul></div>
+      <div class="stackcol"><h4>AI / ML</h4><ul>
+        <li>Ollama (gpt-oss:20b)</li><li>PyTorch</li><li>HF Transformers</li><li>Prompt-engineered fact checking</li></ul></div>
+      <div class="stackcol"><h4>DevOps</h4><ul>
+        <li>Docker</li><li>Docker Compose</li><li>Multi-container</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="story">
+  <div class="wrap reveal">
+    <p class="eyebrow">05 — What inspired it</p>
+    <h2>Built for students like us.</h2>
+    <blockquote class="quote">
+      "We both go to an international university where professors' first language is often not English — and it becomes incredibly hard to take notes and make sure what you wrote is right."
+      <span>— the TruthLens team</span>
+    </blockquote>
+    <div class="tracks">
+      <div class="track"><span class="primary">PRIMARY</span> Automate Learning: Build Smarter Study Tools</div>
+      <div class="track">📚 GitBook Best Documentation</div>
+      <div class="track">🤖 Built with Cline CLI</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    An interactive showcase of a BCSAI hackathon project ·
+    Original source by <a href="https://github.com/sofiagzzloz/TruthLens" target="_blank" rel="noopener">sofiagzzloz</a>.
+    Rebuilt from scratch as a static site. The fact-check demo above is a scripted illustration.
+  </div>
+</footer>
+
+<script>
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  const run=document.getElementById('run');
+  const scan=document.getElementById('scan');
+  const fixwrap=document.getElementById('fixwrap');
+  const sents=[...document.querySelectorAll('#note .sent')];
+  let analysed=false;
+  run.addEventListener('click',()=>{
+    if(analysed){ // reset
+      sents.forEach(s=>s.classList.remove('flagged','ok'));
+      fixwrap.innerHTML=''; analysed=false;
+      run.textContent='🔍 Run TruthLens'; scan.textContent='4 sentences · not yet analysed';
+      return;
+    }
+    run.disabled=true; run.textContent='Analysing…'; scan.textContent='scanning sentence-by-sentence…';
+    let i=0;
+    const tick=()=>{
+      if(i>0){ // mark previous
+        const prev=sents[i-1];
+        prev.classList.add(prev.dataset.v==='bad'?'flagged':'ok');
+        if(prev.dataset.v==='bad'){
+          const f=document.createElement('div');
+          f.className='fix';
+          f.innerHTML='<div class="lab">⚠ Flagged · correction</div><div class="corr">'+prev.dataset.corr+'</div><div class="src">↳ '+prev.dataset.src+'</div>';
+          fixwrap.appendChild(f); setTimeout(()=>f.classList.add('show'),30);
+        }
+      }
+      if(i<sents.length){ scan.textContent='checking sentence '+(i+1)+' of '+sents.length+'…'; i++; setTimeout(tick,560); }
+      else { run.disabled=false; analysed=true; run.textContent='↺ Reset';
+        const flagged=sents.filter(s=>s.dataset.v==='bad').length;
+        scan.textContent=flagged+' issue'+(flagged!==1?'s':'')+' found · '+(sents.length-flagged)+' verified'; }
+    };
+    tick();
+  });
+</script>
+</body>
+</html>
