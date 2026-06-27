@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>TruthLens · AI Fact-Checking for Your Notes</title>
-<meta name="description" content="TruthLens turns messy study notes into a verified knowledge base — sentence-level AI fact-checking with corrections, reasoning, and sources. A BCSAI hackathon project, rebuilt as an interactive showcase." />
+<meta name="description" content="TruthLens fact-checks study notes sentence-by-sentence: TF-IDF retrieval over a trusted corpus plus a trained logistic-regression entailment model returns SUPPORTED / CONTRADICTED / NOT-ENOUGH-INFO with evidence. A BCSAI hackathon project; the engine is real Python (scikit-learn)." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -63,18 +63,24 @@
   .demo .body{padding:22px}
   .demo .body p.note{font-size:1.04rem;line-height:1.85;margin:0}
   .sent{padding:1px 2px;border-radius:4px;transition:background .3s,box-shadow .3s;cursor:default}
-  .sent.flagged{background:rgba(192,73,47,.12);box-shadow:inset 0 -2px 0 var(--bad)}
-  .sent.ok{background:rgba(47,143,99,.12);box-shadow:inset 0 -2px 0 var(--good)}
+  .sent.contradicted{background:rgba(192,73,47,.12);box-shadow:inset 0 -2px 0 var(--bad)}
+  .sent.supported{background:rgba(47,143,99,.12);box-shadow:inset 0 -2px 0 var(--good)}
+  .sent.nei{background:rgba(102,108,102,.12);box-shadow:inset 0 -2px 0 var(--muted)}
   .fixwrap{margin-top:16px;display:flex;flex-direction:column;gap:10px}
-  .fix{border:1px solid var(--line);border-left:3px solid var(--bad);border-radius:10px;padding:12px 14px;
+  .fix{border:1px solid var(--line);border-left:3px solid var(--muted);border-radius:10px;padding:12px 14px;
     background:var(--paper);font-size:.88rem;opacity:0;transform:translateY(6px);
     transition:opacity .4s,transform .4s}
   .fix.show{opacity:1;transform:none}
+  .fix.contradicted{border-left-color:var(--bad)}
+  .fix.supported{border-left-color:var(--good)}
+  .fix.nei{border-left-color:var(--muted)}
   .fix .lab{font-family:"JetBrains Mono",monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--bad);font-weight:600}
+    color:var(--muted);font-weight:600;display:flex;justify-content:space-between;gap:10px}
+  .fix.contradicted .lab{color:var(--bad)}
+  .fix.supported .lab{color:var(--good)}
   .fix .corr{margin:5px 0 4px}
-  .fix .corr b{color:var(--good)}
-  .fix .src{color:var(--muted);font-size:.8rem}
+  .fix .corr b{color:var(--ink)}
+  .fix .src{color:var(--muted);font-size:.8rem;font-family:"JetBrains Mono",monospace}
   .demo .act{display:flex;align-items:center;gap:14px;padding:0 22px 22px}
   .runbtn{font-size:.86rem;padding:9px 18px;border-radius:999px;border:none;background:var(--accent);
     color:#fff;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px}
@@ -151,9 +157,9 @@
 
 <div class="hero">
   <div class="wrap">
-    <p class="kicker">BCSAI · Hackathon Project · Automate Learning</p>
-    <h1>Turn messy notes into verified knowledge.</h1>
-    <p class="lede">TruthLens is a note-taking workspace that fact-checks your study notes with AI — inspecting every sentence, flagging weak or incorrect claims, and handing back corrections with reasoning and sources. All without breaking your flow.</p>
+    <p class="kicker">BCSAI · Hackathon Project · Real Python engine</p>
+    <h1>Fact-check your notes, sentence by sentence.</h1>
+    <p class="lede">TruthLens splits study notes into claims, retrieves the most relevant evidence from a trusted reference corpus with TF-IDF, and a trained entailment model rules each claim <b>supported</b>, <b>contradicted</b>, or <b>not&nbsp;enough&nbsp;info</b> — with the evidence and a confidence. No large language model: just retrieval plus a linear classifier.</p>
     <div class="cta">
       <a class="btn" href="#how">How it works →</a>
       <a class="btn ghost" href="#what">What it is</a>
@@ -166,16 +172,17 @@
       </div>
       <div class="body">
         <p class="note" id="note">
-          <span class="sent" data-v="ok">The mitochondria is the powerhouse of the cell.</span>
-          <span class="sent" data-v="bad" data-corr="Water boils at <b>100&nbsp;°C</b> at sea level (1&nbsp;atm), not 90&nbsp;°C." data-src="NIST · standard boiling point of water">Water boils at 90&nbsp;°C at sea level.</span>
-          <span class="sent" data-v="bad" data-corr="The Great Wall is <b>not</b> generally visible to the naked eye from low Earth orbit — this is a common myth." data-src="NASA · astronaut observations">The Great Wall of China is visible from space with the naked eye.</span>
-          <span class="sent" data-v="ok">Python is a dynamically typed language.</span>
+          <span class="sent" data-v="supported" data-conf="92" data-ev="The capital of France is Paris." data-src="CIA World Factbook · sim 0.89">Paris is the capital of France.</span>
+          <span class="sent" data-v="contradicted" data-conf="84" data-ev="Water boils at 100&nbsp;°C at standard atmospheric pressure at sea level." data-src="NIST · sim 0.62">Water boils at 90&nbsp;°C at sea level.</span>
+          <span class="sent" data-v="contradicted" data-conf="57" data-ev="The Great Wall of China is <b>not</b> visible to the unaided eye from low Earth orbit." data-src="NASA · sim 0.57">The Great Wall of China is visible from space with the naked eye.</span>
+          <span class="sent" data-v="supported" data-conf="74" data-ev="Python is a dynamically typed, interpreted language created by Guido van Rossum." data-src="Python docs · sim 0.56">Python is a dynamically typed language.</span>
+          <span class="sent" data-v="nei" data-conf="100" data-ev="" data-src="">My favorite color is blue today.</span>
         </p>
         <div class="fixwrap" id="fixwrap"></div>
       </div>
       <div class="act">
         <button class="runbtn" id="run">🔍 Run TruthLens</button>
-        <span class="scan" id="scan">4 sentences · not yet analysed</span>
+        <span class="scan" id="scan">5 claims · not yet analysed</span>
       </div>
     </div>
   </div>
@@ -184,15 +191,15 @@
 <section id="what">
   <div class="wrap reveal">
     <p class="eyebrow">01 — What it is</p>
-    <h2>A personal fact-checker, built into your notebook.</h2>
-    <p class="section-lede">Most learners take notes quickly without verifying them, miss subtle factual errors, and spend hours double-checking. TruthLens automates that feedback loop so notes become reliable knowledge.</p>
+    <h2>A transparent fact-checker for study notes.</h2>
+    <p class="section-lede">Learners take notes quickly and miss subtle factual errors. TruthLens checks each claim against a trusted reference corpus and tells you whether it holds up — with the exact evidence sentence and a confidence, not a black box.</p>
     <div class="grid3">
-      <div class="card"><div class="ic">🔬</div><h3>Sentence-level intelligence</h3><p>Inspects every sentence you write and flags weak or incorrect knowledge.</p></div>
-      <div class="card"><div class="ic">🤖</div><h3>AI-powered fact checking</h3><p>Uses local LLMs via Ollama to verify claims and ground corrections.</p></div>
-      <div class="card"><div class="ic">🔗</div><h3>Source citations</h3><p>Each correction comes with references to trustworthy sources.</p></div>
-      <div class="card"><div class="ic">📝</div><h3>Effortless corrections</h3><p>Get refined notes with confidence that every claim is verified.</p></div>
-      <div class="card"><div class="ic">📊</div><h3>Learning workspace</h3><p>A dashboard to manage documents, view analysis, and track corrections.</p></div>
-      <div class="card"><div class="ic">🔒</div><h3>Secure &amp; private</h3><p>User authentication with secure, per-user workspace management.</p></div>
+      <div class="card"><div class="ic">✂️</div><h3>Claim by claim</h3><p>Notes are split into individual sentences so each factual claim is judged on its own.</p></div>
+      <div class="card"><div class="ic">🔎</div><h3>TF-IDF retrieval</h3><p>Every claim is matched against the corpus by cosine similarity to pull the most relevant evidence.</p></div>
+      <div class="card"><div class="ic">⚖️</div><h3>Three-way stance</h3><p>A trained linear model rules each claim supported, contradicted, or not-enough-info.</p></div>
+      <div class="card"><div class="ic">🔗</div><h3>Evidence + source</h3><p>Each verdict shows the evidence sentence and its source label, never an unsourced assertion.</p></div>
+      <div class="card"><div class="ic">📐</div><h3>Calibrated confidence</h3><p>The classifier's probability becomes a confidence score on every verdict.</p></div>
+      <div class="card"><div class="ic">🧪</div><h3>Tested &amp; honest</h3><p>15 pytest tests; ~0.77 held-out accuracy. No LLM — just retrieval and a linear classifier.</p></div>
     </div>
   </div>
 </section>
@@ -200,14 +207,12 @@
 <section id="how">
   <div class="wrap reveal">
     <p class="eyebrow">02 — How it works</p>
-    <h2>Six steps from raw notes to reliable knowledge.</h2>
+    <h2>Four steps from a note to a verdict.</h2>
     <div class="steps">
-      <div class="step"><h4>Create an account</h4><p>Sign up and get your personal workspace.</p></div>
-      <div class="step"><h4>Write your notes</h4><p>Create documents and start writing study notes.</p></div>
-      <div class="step"><h4>AI analysis</h4><p>Run TruthLens to analyse each sentence for factual accuracy.</p></div>
-      <div class="step"><h4>View results</h4><p>See flagged sentences with corrections, reasoning, and sources.</p></div>
-      <div class="step"><h4>Apply corrections</h4><p>Review and apply suggested fixes to improve your notes.</p></div>
-      <div class="step"><h4>Build knowledge</h4><p>Maintain a reliable, fact-checked knowledge base over time.</p></div>
+      <div class="step"><h4>Split into claims</h4><p>The note is broken into sentences, keeping decimals and abbreviations intact.</p></div>
+      <div class="step"><h4>Retrieve evidence</h4><p>A TF-IDF vectorizer scores the corpus by cosine similarity and returns the best match.</p></div>
+      <div class="step"><h4>Classify the stance</h4><p>A logistic-regression model reads overlap, number-conflict, negation and antonym features.</p></div>
+      <div class="step"><h4>Report the verdict</h4><p>Supported, contradicted, or not-enough-info — with evidence, source, and confidence.</p></div>
     </div>
   </div>
 </section>
@@ -215,33 +220,33 @@
 <section id="arch">
   <div class="wrap reveal">
     <p class="eyebrow">03 — Architecture</p>
-    <h2>How the pieces fit.</h2>
-    <p class="section-lede">A Next.js front end talks to a Django REST backend, which persists to PostgreSQL and calls a local Ollama LLM engine for the actual fact-checking.</p>
+    <h2>The retrieve-then-classify pipeline.</h2>
+    <p class="section-lede">Each claim flows through a splitter, a TF-IDF retriever over the reference corpus, and a trained logistic-regression entailment model that emits the verdict. All in pure Python with scikit-learn.</p>
     <div class="archi">
-      <div class="box"><div class="t">Next.js</div><div class="s">frontend</div></div>
+      <div class="box"><div class="t">Splitter</div><div class="s">note → claims</div></div>
       <span class="arrow">→</span>
-      <div class="box"><div class="t">Django</div><div class="s">REST backend</div></div>
+      <div class="box"><div class="t">TF-IDF</div><div class="s">retrieve evidence</div></div>
       <span class="arrow">→</span>
-      <div class="box"><div class="t">PostgreSQL</div><div class="s">database</div></div>
-      <span class="arrow">↘</span>
-      <div class="box ai"><div class="t">Ollama</div><div class="s">LLM engine</div></div>
+      <div class="box ai"><div class="t">LogReg</div><div class="s">entailment model</div></div>
+      <span class="arrow">→</span>
+      <div class="box"><div class="t">Verdict</div><div class="s">+ evidence + conf</div></div>
     </div>
   </div>
 </section>
 
 <section id="stack">
   <div class="wrap reveal">
-    <p class="eyebrow">04 — Stack</p>
+    <p class="eyebrow">04 — Stack &amp; numbers</p>
     <h2>Built with.</h2>
     <div class="stackgrid">
-      <div class="stackcol"><h4>Frontend</h4><ul>
-        <li>Next.js 16</li><li>React 19.2</li><li>TypeScript</li><li>Tailwind CSS</li><li>Framer Motion</li><li>shadcn/ui · Radix</li></ul></div>
-      <div class="stackcol"><h4>Backend</h4><ul>
-        <li>Django 5.0</li><li>Django REST</li><li>PostgreSQL 15</li><li>Django Unfold</li><li>CORS Headers</li></ul></div>
-      <div class="stackcol"><h4>AI / ML</h4><ul>
-        <li>Ollama (gpt-oss:20b)</li><li>PyTorch</li><li>HF Transformers</li><li>Prompt-engineered fact checking</li></ul></div>
-      <div class="stackcol"><h4>DevOps</h4><ul>
-        <li>Docker</li><li>Docker Compose</li><li>Multi-container</li></ul></div>
+      <div class="stackcol"><h4>Engine</h4><ul>
+        <li>Python 3.12</li><li>scikit-learn</li><li>NumPy</li><li>SciPy</li></ul></div>
+      <div class="stackcol"><h4>Retrieval</h4><ul>
+        <li>TfidfVectorizer</li><li>1–2 word grams</li><li>cosine similarity</li><li>sim floor for NEI</li></ul></div>
+      <div class="stackcol"><h4>Classifier</h4><ul>
+        <li>Logistic regression</li><li>9 lexical features</li><li>98 seed triples</li><li>~0.77 CV accuracy</li></ul></div>
+      <div class="stackcol"><h4>Corpus &amp; tests</h4><ul>
+        <li>38 reference facts</li><li>7 study topics</li><li>15 pytest tests</li><li>MIT licensed</li></ul></div>
     </div>
   </div>
 </section>
@@ -256,16 +261,16 @@
     </blockquote>
     <div class="tracks">
       <div class="track"><span class="primary">PRIMARY</span> Automate Learning: Build Smarter Study Tools</div>
-      <div class="track">📚 GitBook Best Documentation</div>
-      <div class="track">🤖 Built with Cline CLI</div>
+      <div class="track">🐍 Pure-Python engine</div>
+      <div class="track">🧪 Retrieval + linear NLI</div>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    TruthLens · an interactive project showcase, built from scratch.
-    The fact-check demo above is a scripted illustration.
+    TruthLens · sentence-level fact-checking — TF-IDF retrieval + a trained logistic-regression entailment model.
+    The engine is real Python (scikit-learn); the in-browser demo above replays its actual verdicts on the sample note. See the repo for code, data, and tests.
   </div>
 </footer>
 
@@ -277,31 +282,34 @@
   const scan=document.getElementById('scan');
   const fixwrap=document.getElementById('fixwrap');
   const sents=[...document.querySelectorAll('#note .sent')];
+  const LABEL={supported:'Supported',contradicted:'Contradicted',nei:'Not enough info'};
   let analysed=false;
   run.addEventListener('click',()=>{
     if(analysed){ // reset
-      sents.forEach(s=>s.classList.remove('flagged','ok'));
+      sents.forEach(s=>s.classList.remove('supported','contradicted','nei'));
       fixwrap.innerHTML=''; analysed=false;
-      run.textContent='🔍 Run TruthLens'; scan.textContent='4 sentences · not yet analysed';
+      run.textContent='🔍 Run TruthLens'; scan.textContent='5 claims · not yet analysed';
       return;
     }
-    run.disabled=true; run.textContent='Analysing…'; scan.textContent='scanning sentence-by-sentence…';
+    run.disabled=true; run.textContent='Analysing…'; scan.textContent='retrieve → classify, claim by claim…';
     let i=0;
     const tick=()=>{
-      if(i>0){ // mark previous
+      if(i>0){ // emit verdict for previous claim
         const prev=sents[i-1];
-        prev.classList.add(prev.dataset.v==='bad'?'flagged':'ok');
-        if(prev.dataset.v==='bad'){
-          const f=document.createElement('div');
-          f.className='fix';
-          f.innerHTML='<div class="lab">⚠ Flagged · correction</div><div class="corr">'+prev.dataset.corr+'</div><div class="src">↳ '+prev.dataset.src+'</div>';
-          fixwrap.appendChild(f); setTimeout(()=>f.classList.add('show'),30);
-        }
+        const v=prev.dataset.v;
+        prev.classList.add(v);
+        const f=document.createElement('div');
+        f.className='fix '+v;
+        let ev = prev.dataset.ev
+          ? '<div class="corr">'+prev.dataset.ev+'</div><div class="src">↳ '+prev.dataset.src+'</div>'
+          : '<div class="corr">no relevant evidence found in the corpus</div>';
+        f.innerHTML='<div class="lab"><span>'+LABEL[v]+'</span><span>conf '+prev.dataset.conf+'%</span></div>'+ev;
+        fixwrap.appendChild(f); setTimeout(()=>f.classList.add('show'),30);
       }
-      if(i<sents.length){ scan.textContent='checking sentence '+(i+1)+' of '+sents.length+'…'; i++; setTimeout(tick,560); }
+      if(i<sents.length){ scan.textContent='checking claim '+(i+1)+' of '+sents.length+'…'; i++; setTimeout(tick,560); }
       else { run.disabled=false; analysed=true; run.textContent='↺ Reset';
-        const flagged=sents.filter(s=>s.dataset.v==='bad').length;
-        scan.textContent=flagged+' issue'+(flagged!==1?'s':'')+' found · '+(sents.length-flagged)+' verified'; }
+        const n=v=>sents.filter(s=>s.dataset.v===v).length;
+        scan.textContent=n('supported')+' supported · '+n('contradicted')+' contradicted · '+n('nei')+' not-enough-info'; }
     };
     tick();
   });

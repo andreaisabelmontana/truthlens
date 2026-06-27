@@ -1,0 +1,48 @@
+{
+  "description": "Trusted reference corpus for TruthLens. Each entry is a single factual sentence with a topic tag and a short source label. Used as the evidence pool for TF-IDF retrieval.",
+  "sentences": [
+    {"id": "bio-1", "topic": "biology", "text": "The mitochondria is the organelle that produces most of the cell's ATP through aerobic respiration.", "source": "Alberts, Molecular Biology of the Cell"},
+    {"id": "bio-2", "topic": "biology", "text": "Photosynthesis converts carbon dioxide and water into glucose and oxygen using light energy.", "source": "Campbell Biology"},
+    {"id": "bio-3", "topic": "biology", "text": "DNA is composed of four nucleotide bases: adenine, thymine, guanine, and cytosine.", "source": "Campbell Biology"},
+    {"id": "bio-4", "topic": "biology", "text": "Human red blood cells lack a nucleus when mature and carry oxygen using hemoglobin.", "source": "Guyton, Medical Physiology"},
+    {"id": "bio-5", "topic": "biology", "text": "Ribosomes are the cellular structures responsible for synthesizing proteins from messenger RNA.", "source": "Alberts, Molecular Biology of the Cell"},
+    {"id": "bio-6", "topic": "biology", "text": "The human body has 206 bones in the adult skeleton.", "source": "Gray's Anatomy"},
+
+    {"id": "chem-1", "topic": "chemistry", "text": "Water boils at 100 degrees Celsius at standard atmospheric pressure of one atmosphere at sea level.", "source": "NIST standard reference data"},
+    {"id": "chem-2", "topic": "chemistry", "text": "Water freezes into ice at 0 degrees Celsius at standard atmospheric pressure.", "source": "NIST standard reference data"},
+    {"id": "chem-3", "topic": "chemistry", "text": "The chemical formula for water is H2O, made of two hydrogen atoms and one oxygen atom.", "source": "IUPAC nomenclature"},
+    {"id": "chem-4", "topic": "chemistry", "text": "Gold is a chemical element with the symbol Au and atomic number 79.", "source": "IUPAC periodic table"},
+    {"id": "chem-5", "topic": "chemistry", "text": "An acid is a substance with a pH below 7, while a base has a pH above 7.", "source": "Atkins, Physical Chemistry"},
+    {"id": "chem-6", "topic": "chemistry", "text": "The pH scale ranges from 0 to 14, with 7 being neutral at 25 degrees Celsius.", "source": "Atkins, Physical Chemistry"},
+
+    {"id": "phys-1", "topic": "physics", "text": "The speed of light in a vacuum is approximately 299,792 kilometers per second.", "source": "NIST CODATA constants"},
+    {"id": "phys-2", "topic": "physics", "text": "Sound travels at roughly 343 meters per second in dry air at 20 degrees Celsius.", "source": "NIST CODATA constants"},
+    {"id": "phys-3", "topic": "physics", "text": "Newton's first law states that an object in motion stays in motion unless acted on by an external force.", "source": "Halliday, Fundamentals of Physics"},
+    {"id": "phys-4", "topic": "physics", "text": "Gravity on Earth accelerates falling objects at approximately 9.8 meters per second squared.", "source": "Halliday, Fundamentals of Physics"},
+    {"id": "phys-5", "topic": "physics", "text": "Energy cannot be created or destroyed, only transformed, according to the law of conservation of energy.", "source": "Halliday, Fundamentals of Physics"},
+
+    {"id": "astro-1", "topic": "astronomy", "text": "The Great Wall of China is not visible to the unaided human eye from low Earth orbit, contrary to popular belief.", "source": "NASA astronaut observations"},
+    {"id": "astro-2", "topic": "astronomy", "text": "The Sun is a star located at the center of our Solar System.", "source": "NASA Solar System overview"},
+    {"id": "astro-3", "topic": "astronomy", "text": "Earth completes one orbit around the Sun in approximately 365.25 days.", "source": "NASA planetary fact sheet"},
+    {"id": "astro-4", "topic": "astronomy", "text": "The Moon is Earth's only natural satellite and orbits the planet about every 27.3 days.", "source": "NASA planetary fact sheet"},
+    {"id": "astro-5", "topic": "astronomy", "text": "Mars is the fourth planet from the Sun and is often called the Red Planet.", "source": "NASA planetary fact sheet"},
+    {"id": "astro-6", "topic": "astronomy", "text": "There are eight planets in the Solar System after Pluto was reclassified as a dwarf planet in 2006.", "source": "International Astronomical Union"},
+
+    {"id": "geo-1", "topic": "geography", "text": "Mount Everest is the highest mountain above sea level on Earth, standing about 8,849 meters tall.", "source": "National Geographic"},
+    {"id": "geo-2", "topic": "geography", "text": "The Pacific Ocean is the largest and deepest of Earth's oceans.", "source": "NOAA ocean facts"},
+    {"id": "geo-3", "topic": "geography", "text": "The Nile is widely regarded as the longest river in the world, flowing through northeastern Africa.", "source": "National Geographic"},
+    {"id": "geo-4", "topic": "geography", "text": "The capital of France is Paris.", "source": "CIA World Factbook"},
+    {"id": "geo-5", "topic": "geography", "text": "The Amazon rainforest is the largest tropical rainforest, located mostly in Brazil.", "source": "National Geographic"},
+    {"id": "geo-6", "topic": "geography", "text": "The Sahara is the largest hot desert in the world, covering much of North Africa.", "source": "National Geographic"},
+
+    {"id": "cs-1", "topic": "computer science", "text": "Python is a dynamically typed, interpreted programming language created by Guido van Rossum.", "source": "Python documentation"},
+    {"id": "cs-2", "topic": "computer science", "text": "HTTP is a stateless application-layer protocol used for transferring web documents.", "source": "MDN web docs"},
+    {"id": "cs-3", "topic": "computer science", "text": "Binary search runs in logarithmic time on a sorted array.", "source": "Cormen, Introduction to Algorithms"},
+    {"id": "cs-4", "topic": "computer science", "text": "RAM is volatile memory that loses its contents when power is removed.", "source": "Tanenbaum, Structured Computer Organization"},
+    {"id": "cs-5", "topic": "computer science", "text": "A compiler translates source code into machine code before the program runs.", "source": "Aho, Compilers: Principles, Techniques, and Tools"},
+
+    {"id": "hist-1", "topic": "history", "text": "World War II ended in 1945 with the surrender of Germany and Japan.", "source": "Encyclopaedia Britannica"},
+    {"id": "hist-2", "topic": "history", "text": "The Declaration of Independence of the United States was adopted in 1776.", "source": "U.S. National Archives"},
+    {"id": "hist-3", "topic": "history", "text": "The Berlin Wall fell in 1989, marking a key moment in the end of the Cold War.", "source": "Encyclopaedia Britannica"}
+  ]
+}
